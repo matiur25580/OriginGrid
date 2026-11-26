@@ -7,6 +7,7 @@ const envSchema = z.object({
   API_PREFIX: z.string().startsWith("/").default("/api/v1"),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
   CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
+  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info")
 });
 
