@@ -14,7 +14,8 @@ export function createApp() {
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: false, limit: "1mb" }));
-  app.use(pinoHttp({ level: env.LOG_LEVEL }));
+  const requestLogger = pinoHttp as unknown as (options: { level: string; redact: string[] }) => express.RequestHandler;
+  app.use(requestLogger({ level: env.LOG_LEVEL, redact: ["req.headers.authorization", "req.headers.cookie"] }));
 
   app.use(`${env.API_PREFIX}/health`, healthRouter);
   app.use(notFoundHandler);
