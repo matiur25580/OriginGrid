@@ -30,14 +30,20 @@ export async function register(input: { name: string; email: string; password: s
   if (await User.exists({ email })) throw new AppError("An account with this email already exists", 409, "EMAIL_ALREADY_REGISTERED");
   const passwordHash = await bcrypt.hash(input.password, 12);
   const user = await User.create({ name: input.name, email, passwordHash });
+  let createdOrganizationId: unknown;
   try {
     const baseSlug = slugify(input.organizationName) || "organization";
     let slug = baseSlug;
     for (let attempt = 0; await Organization.exists({ slug }); attempt++) slug = `${baseSlug}-${randomUUID().slice(0, 6)}`;
     const organization = await Organization.create({ name: input.organizationName, slug, createdBy: user._id });
+    createdOrganizationId = organization._id;
     await Membership.create({ userId: user._id, organizationId: organization._id, role: "owner", status: "active" });
     return { user: { id: String(user._id), name: user.name, email: user.email }, organization: { id: String(organization._id), name: organization.name, slug: organization.slug }, session: await issueSession(user) };
   } catch (error) {
+    if (createdOrganizationId) {
+      await Membership.deleteMany({ userId: user._id, organizationId: createdOrganizationId });
+      await Organization.deleteOne({ _id: createdOrganizationId });
+    }
     await User.deleteOne({ _id: user._id });
     throw error;
   }
@@ -63,9 +69,19 @@ export async function rotateRefreshToken(token: string) {
   const user = await User.findById(existing.userId);
   if (!user || user.status !== "active") throw new AppError("Account is unavailable", 401, "ACCOUNT_UNAVAILABLE");
   const next = createRefreshToken();
-  existing.revokedAt = new Date();
-  existing.replacedByHash = next.tokenHash;
-  await existing.save();
+  const rotated = await RefreshToken.findOneAndUpdate(
+    { _id: existing._id, revokedAt: null, expiresAt: { $gt: new Date() } },
+    { $set: { revokedAt: new Date(), replacedByHash: next.tokenHash } },
+    { new: true }
+  );
+  if (!rotated) {
+    const latest = await RefreshToken.findById(existing._id);
+    if (latest?.revokedAt) {
+      await RefreshToken.updateMany({ familyId: existing.familyId, revokedAt: null }, { revokedAt: new Date() });
+      throw new AppError("Refresh token reuse detected; session family revoked", 401, "REFRESH_TOKEN_REUSE");
+    }
+    throw new AppError("Refresh token is invalid or expired", 401, "INVALID_REFRESH_TOKEN");
+  }
   await RefreshToken.create({ userId: user._id, tokenHash: next.tokenHash, familyId: existing.familyId, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) });
   return { user: { id: String(user._id), name: user.name, email: user.email }, session: { accessToken: signAccessToken({ sub: String(user._id), email: user.email }), refreshToken: next.token, expiresIn: 900 } };
 }
