@@ -16,7 +16,7 @@ export function createApp() {
   app.use(express.urlencoded({ extended: false, limit: "1mb" }));
   app.use(pinoHttp({ level: env.LOG_LEVEL }));
 
-  app.use(`${env.API_PREFIX}/health", healthRouter);
+  app.use(`${env.API_PREFIX}/health`, healthRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
