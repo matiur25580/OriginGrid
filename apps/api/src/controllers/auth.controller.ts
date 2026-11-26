@@ -44,7 +44,8 @@ export const refresh: RequestHandler = async (req, res, next) => {
 export const logout: RequestHandler = async (req, res, next) => {
   try {
     await authService.revokeRefreshToken(req.cookies?.og_refresh as string | undefined);
-    res.clearCookie("og_refresh", authService.refreshCookieOptions());
+    const { maxAge: _maxAge, ...clearOptions } = authService.refreshCookieOptions();
+    res.clearCookie("og_refresh", clearOptions);
     res.status(204).send();
   } catch (error) { next(error); }
 };
