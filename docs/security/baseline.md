@@ -1,26 +1,26 @@
 # Security Baseline
 
 ## Implemented controls
-- Helmet security headers and restricted credentialed CORS.
-- JSON and URL-encoded request body limits.
-- Environment validation with Zod; access-token secrets must be at least 32 characters.
-- Password hashing with bcrypt (cost factor 12).
-- Short-lived, issuer/audience-bound HS256 access tokens.
-- Opaque refresh tokens stored only as SHA-256 hashes, rotated on refresh, and revoked on logout.
-- Refresh-token family revocation when a previously rotated token is reused.
-- HttpOnly, SameSite=Strict refresh cookie; Secure is enabled in production.
-- Authentication endpoint rate limiting.
-- Server-side tenant resolution from a validated organization ID and active membership; never trust a client-supplied role.
-- Generic public error responses and redaction of authorization/cookie headers from request logs.
+- Helmet security headers, restricted credentialed CORS, and bounded request bodies.
+- Zod environment and request validation.
+- bcrypt password hashing, short-lived issuer/audience-bound JWT access tokens, and hashed opaque refresh tokens.
+- Refresh rotation with reuse-family revocation; HttpOnly, SameSite=Strict refresh cookie.
+- Authentication endpoint rate limiting and active-account checks.
+- Server-side tenant resolution from active membership; client-supplied roles are never trusted.
+- Role-protected organization administration routes.
+- Invitation tokens are high-entropy, stored only as SHA-256 hashes, email-bound, expiring, and revocable.
+- Tenant-scoped department/team references are validated before assignment.
+- Organization workforce actions create audit events; audit data excludes passwords, tokens, and invitation secrets.
+- Authorization and cookie headers are redacted from request logs.
 
 ## Required before production
-- Email verification, password reset, MFA, session/device management, and account recovery.
+- Transactional email delivery, email verification, password reset, MFA, session/device management, and account recovery.
 - Stronger CSRF/origin policy and deployment-specific cookie domain/path review.
 - Centralized secret management and planned JWT key rotation.
-- Fine-grained permission policies and audit events for privileged actions.
-- Dependency and container scanning, vulnerability remediation, and lockfile-based reproducible installs.
+- Fine-grained permission policies, ownership transfer, audit retention/export, and stronger audit tamper-resistance.
+- Dependency/container scanning, vulnerability remediation, and lockfile-based reproducible installs.
 - Explicit production CORS allowlist, backups, restore drills, retention policies, and incident response procedures.
-- Security review and integration tests against a production-like MongoDB replica set.
+- Integration tests against a production-like MongoDB replica set and independent security review.
 
 ## Data classification
 1. Public: explicitly published passport fields.
