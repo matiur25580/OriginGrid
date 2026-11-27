@@ -25,7 +25,7 @@ export async function listMembers(organizationId: string) {
   return Membership.find({ organizationId }).populate("userId", "name email status").populate("departmentId", "name code").populate("teamIds", "name").sort({ createdAt: 1 }).lean();
 }
 
-export async function updateMember(organizationId: string, actorUserId: string, actorRole: OrganizationRole, membershipId: string, input: { role?: OrganizationRole; status?: "active" | "suspended"; departmentId?: string | null; teamIds?: string[] }) {
+export async function updateMember(organizationId: string, actorUserId: string, actorRole: OrganizationRole, membershipId: string, input: { role?: OrganizationRole | undefined; status?: "active" | "suspended" | undefined; departmentId?: string | null | undefined; teamIds?: string[] | undefined }) {
   if (!Types.ObjectId.isValid(membershipId)) throw new AppError("Invalid membership identifier", 400, "INVALID_MEMBERSHIP_ID");
   const membership = await Membership.findOne({ _id: membershipId, organizationId });
   if (!membership) throw new AppError("Membership not found", 404, "MEMBERSHIP_NOT_FOUND");
@@ -131,7 +131,7 @@ export async function createTeam(organizationId: string, actorUserId: string, in
   return team;
 }
 
-export async function updateTeam(organizationId: string, actorUserId: string, id: string, input: { name?: string; description?: string | undefined; departmentId?: string | null | undefined }) {
+export async function updateTeam(organizationId: string, actorUserId: string, id: string, input: { name?: string | undefined; description?: string | undefined; departmentId?: string | null | undefined }) {
   if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid team identifier", 400, "INVALID_TEAM_ID");
   if (input.departmentId && !(await Department.exists({ _id: input.departmentId, organizationId }))) throw new AppError("Department does not belong to this organization", 400, "INVALID_DEPARTMENT");
   const team = await Team.findOneAndUpdate({ _id: id, organizationId }, { $set: input }, { new: true, runValidators: true });
