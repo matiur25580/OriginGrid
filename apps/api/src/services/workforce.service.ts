@@ -25,11 +25,13 @@ export async function listMembers(organizationId: string) {
   return Membership.find({ organizationId }).populate("userId", "name email status").populate("departmentId", "name code").populate("teamIds", "name").sort({ createdAt: 1 }).lean();
 }
 
-export async function updateMember(organizationId: string, actorUserId: string, membershipId: string, input: { role?: OrganizationRole; status?: "active" | "suspended"; departmentId?: string | null; teamIds?: string[] }) {
+export async function updateMember(organizationId: string, actorUserId: string, actorRole: OrganizationRole, membershipId: string, input: { role?: OrganizationRole; status?: "active" | "suspended"; departmentId?: string | null; teamIds?: string[] }) {
+  if (!Types.ObjectId.isValid(membershipId)) throw new AppError("Invalid membership identifier", 400, "INVALID_MEMBERSHIP_ID");
   const membership = await Membership.findOne({ _id: membershipId, organizationId });
   if (!membership) throw new AppError("Membership not found", 404, "MEMBERSHIP_NOT_FOUND");
   if (membership.role === "owner") throw new AppError("Owner membership must be transferred through the ownership workflow", 409, "OWNER_PROTECTED");
   if (input.role === "owner") throw new AppError("Ownership cannot be assigned through role editing", 400, "OWNER_TRANSFER_REQUIRED");
+  if (actorRole === "admin" && (membership.role === "admin" || input.role === "admin")) throw new AppError("Only an organization owner can manage administrator roles", 403, "ADMIN_ROLE_PROTECTED");
   if (input.departmentId) {
     if (!Types.ObjectId.isValid(input.departmentId) || !(await Department.exists({ _id: input.departmentId, organizationId }))) throw new AppError("Department does not belong to this organization", 400, "INVALID_DEPARTMENT");
     membership.departmentId = new Types.ObjectId(input.departmentId);
@@ -64,6 +66,7 @@ export async function listInvitations(organizationId: string) {
 }
 
 export async function revokeInvitation(organizationId: string, actorUserId: string, invitationId: string) {
+  if (!Types.ObjectId.isValid(invitationId)) throw new AppError("Invalid invitation identifier", 400, "INVALID_INVITATION_ID");
   const invitation = await Invitation.findOneAndUpdate({ _id: invitationId, organizationId, acceptedAt: null, revokedAt: null }, { $set: { revokedAt: new Date() } }, { new: true }).select("-tokenHash");
   if (!invitation) throw new AppError("Pending invitation not found", 404, "INVITATION_NOT_FOUND");
   await audit(organizationId, actorUserId, "invitation.revoked", "invitation", invitationId);
@@ -100,6 +103,7 @@ export async function createDepartment(organizationId: string, actorUserId: stri
 }
 
 export async function updateDepartment(organizationId: string, actorUserId: string, id: string, input: { name?: string; code?: string; description?: string }) {
+  if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid department identifier", 400, "INVALID_DEPARTMENT_ID");
   const department = await Department.findOneAndUpdate({ _id: id, organizationId }, { $set: input }, { new: true, runValidators: true });
   if (!department) throw new AppError("Department not found", 404, "DEPARTMENT_NOT_FOUND");
   await audit(organizationId, actorUserId, "department.updated", "department", id, { changedFields: Object.keys(input) });
@@ -107,6 +111,7 @@ export async function updateDepartment(organizationId: string, actorUserId: stri
 }
 
 export async function deleteDepartment(organizationId: string, actorUserId: string, id: string) {
+  if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid department identifier", 400, "INVALID_DEPARTMENT_ID");
   const department = await Department.findOne({ _id: id, organizationId });
   if (!department) throw new AppError("Department not found", 404, "DEPARTMENT_NOT_FOUND");
   if (await Team.exists({ organizationId, departmentId: id })) throw new AppError("Move or delete this department's teams before deleting it", 409, "DEPARTMENT_HAS_TEAMS");
@@ -127,6 +132,7 @@ export async function createTeam(organizationId: string, actorUserId: string, in
 }
 
 export async function updateTeam(organizationId: string, actorUserId: string, id: string, input: { name?: string; description?: string; departmentId?: string | null }) {
+  if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid team identifier", 400, "INVALID_TEAM_ID");
   if (input.departmentId && !(await Department.exists({ _id: input.departmentId, organizationId }))) throw new AppError("Department does not belong to this organization", 400, "INVALID_DEPARTMENT");
   const team = await Team.findOneAndUpdate({ _id: id, organizationId }, { $set: input }, { new: true, runValidators: true });
   if (!team) throw new AppError("Team not found", 404, "TEAM_NOT_FOUND");
@@ -135,6 +141,7 @@ export async function updateTeam(organizationId: string, actorUserId: string, id
 }
 
 export async function deleteTeam(organizationId: string, actorUserId: string, id: string) {
+  if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid team identifier", 400, "INVALID_TEAM_ID");
   const team = await Team.findOne({ _id: id, organizationId });
   if (!team) throw new AppError("Team not found", 404, "TEAM_NOT_FOUND");
   await Membership.updateMany({ organizationId, teamIds: id }, { $pull: { teamIds: id } });
