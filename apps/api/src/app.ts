@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { organizationRouter } from "./routes/organization.routes.js";
+import { workforceRouter } from "./routes/workforce.routes.js";
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
   app.use(`${env.API_PREFIX}/health`, healthRouter);
   app.use(`${env.API_PREFIX}/auth`, authRouter);
   app.use(`${env.API_PREFIX}/organizations`, organizationRouter);
+  app.use(`${env.API_PREFIX}/organizations`, workforceRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
