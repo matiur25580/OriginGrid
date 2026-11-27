@@ -102,7 +102,7 @@ export async function createDepartment(organizationId: string, actorUserId: stri
   return department;
 }
 
-export async function updateDepartment(organizationId: string, actorUserId: string, id: string, input: { name?: string; code?: string; description?: string }) {
+export async function updateDepartment(organizationId: string, actorUserId: string, id: string, input: { name?: string | undefined; code?: string | undefined; description?: string | undefined }) {
   if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid department identifier", 400, "INVALID_DEPARTMENT_ID");
   const department = await Department.findOneAndUpdate({ _id: id, organizationId }, { $set: input }, { new: true, runValidators: true });
   if (!department) throw new AppError("Department not found", 404, "DEPARTMENT_NOT_FOUND");
