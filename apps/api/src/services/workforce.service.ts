@@ -96,7 +96,7 @@ export async function listDepartments(organizationId: string) {
   return Department.find({ organizationId }).sort({ name: 1 }).lean();
 }
 
-export async function createDepartment(organizationId: string, actorUserId: string, input: { name: string; code: string; description?: string }) {
+export async function createDepartment(organizationId: string, actorUserId: string, input: { name: string; code: string; description?: string | undefined }) {
   const department = await Department.create({ organizationId, ...input, createdBy: actorUserId });
   await audit(organizationId, actorUserId, "department.created", "department", String(department._id));
   return department;
@@ -124,14 +124,14 @@ export async function listTeams(organizationId: string) {
   return Team.find({ organizationId }).populate("departmentId", "name code").sort({ name: 1 }).lean();
 }
 
-export async function createTeam(organizationId: string, actorUserId: string, input: { name: string; description?: string; departmentId?: string | null }) {
+export async function createTeam(organizationId: string, actorUserId: string, input: { name: string; description?: string | undefined; departmentId?: string | null | undefined }) {
   if (input.departmentId && !(await Department.exists({ _id: input.departmentId, organizationId }))) throw new AppError("Department does not belong to this organization", 400, "INVALID_DEPARTMENT");
   const team = await Team.create({ organizationId, ...input, createdBy: actorUserId });
   await audit(organizationId, actorUserId, "team.created", "team", String(team._id));
   return team;
 }
 
-export async function updateTeam(organizationId: string, actorUserId: string, id: string, input: { name?: string; description?: string; departmentId?: string | null }) {
+export async function updateTeam(organizationId: string, actorUserId: string, id: string, input: { name?: string; description?: string | undefined; departmentId?: string | null | undefined }) {
   if (!Types.ObjectId.isValid(id)) throw new AppError("Invalid team identifier", 400, "INVALID_TEAM_ID");
   if (input.departmentId && !(await Department.exists({ _id: input.departmentId, organizationId }))) throw new AppError("Department does not belong to this organization", 400, "INVALID_DEPARTMENT");
   const team = await Team.findOneAndUpdate({ _id: id, organizationId }, { $set: input }, { new: true, runValidators: true });
