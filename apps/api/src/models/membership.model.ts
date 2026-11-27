@@ -8,8 +8,12 @@ const membershipSchema = new Schema({
   organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
   role: { type: String, enum: ORGANIZATION_ROLES, default: "member", required: true },
   status: { type: String, enum: ["active", "invited", "suspended"], default: "active", index: true },
+  departmentId: { type: Schema.Types.ObjectId, ref: "Department", default: null, index: true },
+  teamIds: [{ type: Schema.Types.ObjectId, ref: "Team" }],
   joinedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 membershipSchema.index({ userId: 1, organizationId: 1 }, { unique: true });
+membershipSchema.index({ organizationId: 1, departmentId: 1, status: 1 });
+membershipSchema.index({ organizationId: 1, teamIds: 1, status: 1 });
 export const Membership = model("Membership", membershipSchema);
