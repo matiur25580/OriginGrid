@@ -9,6 +9,7 @@ import { healthRouter } from "./routes/health.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { organizationRouter } from "./routes/organization.routes.js";
 import { workforceRouter } from "./routes/workforce.routes.js";
+import { supplierRouter } from "./routes/supplier.routes.js";
 
 export function createApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp() {
   app.use(`${env.API_PREFIX}/auth`, authRouter);
   app.use(`${env.API_PREFIX}/organizations`, organizationRouter);
   app.use(`${env.API_PREFIX}/organizations`, workforceRouter);
+  app.use(`${env.API_PREFIX}/suppliers`, supplierRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
