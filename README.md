@@ -4,7 +4,7 @@
 
 OriginGrid is an enterprise product provenance and Digital Product Passport platform. It is designed to help manufacturers, suppliers, distributors, and compliance teams maintain an evidence-backed view of a product's lifecycle—from raw-material sourcing and manufacturing through distribution, repair, and end-of-life processing.
 
-> **Project status:** Milestones 1–2 completed in draft pull requests; Milestone 3 workforce management completed in CI; Milestone 4 supplier ecosystem in development. Features are not production-ready until fully tested, reviewed, and deployed. This repository is an evolving software project; features are not production-ready until implemented, tested, documented, and deployed.
+> **Project status:** Milestones 1–4 are merged into main. Milestone 5 (product and material registry) is under implementation. Features are not production-ready until fully tested, reviewed, and deployed.
 
 ## Product goals
 

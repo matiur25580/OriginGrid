@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireRole, requireTenant } from "../middleware/tenant.middleware.js";
+import * as controller from "../controllers/catalog.controller.js";
+export const catalogRouter = Router();
+const tenant = [requireAuth, requireTenant];
+const managers = [...tenant, requireRole("owner", "admin")];
+catalogRouter.get("/products", ...tenant, controller.listProducts);
+catalogRouter.post("/products", ...managers, controller.createProduct);
+catalogRouter.get("/products/:productId", ...tenant, controller.getProduct);
+catalogRouter.patch("/products/:productId", ...managers, controller.updateProduct);
+catalogRouter.get("/materials", ...tenant, controller.listMaterials);
+catalogRouter.post("/materials", ...managers, controller.createMaterial);
+catalogRouter.get("/materials/:materialId", ...tenant, controller.getMaterial);
+catalogRouter.patch("/materials/:materialId", ...managers, controller.updateMaterial);
