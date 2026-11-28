@@ -30,3 +30,8 @@ npm run build
 The catalog rules tests cover normalization, duplicate identifiers, invalid quantities, missing identifiers and units, composition totals, boundary values, and empty optional collections.
 
 These deterministic unit tests complement, but do not replace, database-backed integration tests for tenant isolation, authorization, unique indexes, and audit persistence.
+
+
+## Workspace test execution
+
+The API workspace owns the current catalog rule unit suite (15 deterministic tests). The web workspace is included in the root test command and uses Vitest passWithNoTests mode until a browser/component test environment is added. This avoids failing the monorepo solely because the web package has no test files; it does not claim that UI behavior is covered by automated tests.
