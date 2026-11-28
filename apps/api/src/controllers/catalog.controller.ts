@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 import { z } from "zod";
 import * as catalog from "../services/catalog.service.js";
 const bomItem = z.object({ materialId: z.string().regex(/^[a-f\d]{24}$/i), quantity: z.number().finite().positive().max(1_000_000_000), unit: z.string().trim().min(1).max(30) });
@@ -20,7 +20,7 @@ const updateProductSchema = productSchema.partial().refine(value => Object.keys(
 const updateMaterialSchema = materialSchema.partial().refine(value => Object.keys(value).length > 0);
 const routeId = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 const actor = (req: Express.Request) => ({ organizationId: req.tenant!.organizationId, userId: req.auth!.userId });
-function filters(req: Express.Request) {
+function filters(req: Request) {
  const page = Math.max(1, Number(req.query.page) || 1), limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
  const search = typeof req.query.search === "string" ? req.query.search.slice(0, 100) : undefined;
  const status = typeof req.query.status === "string" ? req.query.status : undefined;
