@@ -25,7 +25,13 @@ const actor = (req: Express.Request) => ({ organizationId: req.tenant!.organizat
 export const list: RequestHandler = async (req,res,next)=>{try{
  const page=Math.max(1,Number(req.query.page)||1), limit=Math.min(100,Math.max(1,Number(req.query.limit)||25));
  const status=typeof req.query.status==="string"?req.query.status:undefined, riskLevel=typeof req.query.riskLevel==="string"?req.query.riskLevel:undefined, search=typeof req.query.search==="string"?req.query.search.slice(0,100):undefined;
- res.json({success:true,data:await suppliers.listSuppliers(actor(req).organizationId,{page,limit,status,riskLevel,search})});
+ res.json({success:true,data:await suppliers.listSuppliers(actor(req).organizationId,{
+  page,
+  limit,
+  ...(status !== undefined ? { status } : {}),
+  ...(riskLevel !== undefined ? { riskLevel } : {}),
+  ...(search !== undefined ? { search } : {})
+ })});
 }catch(e){next(e);}};
 export const create: RequestHandler = async(req,res,next)=>{try{const v=supplierSchema.parse(req.body);res.status(201).json({success:true,data:await suppliers.createSupplier(actor(req),v)});}catch(e){next(e);}};
 export const get: RequestHandler = async(req,res,next)=>{try{res.json({success:true,data:await suppliers.getSupplier(actor(req).organizationId,routeId(req.params.supplierId))});}catch(e){next(e);}};
