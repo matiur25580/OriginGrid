@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
@@ -5,6 +6,8 @@ import pinoHttp from "pino-http";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import { healthRouter } from "./routes/health.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { organizationRouter } from "./routes/organization.routes.js";
 
 export function createApp() {
   const app = express();
@@ -14,10 +17,13 @@ export function createApp() {
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: false, limit: "1mb" }));
+  app.use(cookieParser());
   const requestLogger = pinoHttp as unknown as (options: { level: string; redact: string[] }) => express.RequestHandler;
   app.use(requestLogger({ level: env.LOG_LEVEL, redact: ["req.headers.authorization", "req.headers.cookie"] }));
 
   app.use(`${env.API_PREFIX}/health`, healthRouter);
+  app.use(`${env.API_PREFIX}/auth`, authRouter);
+  app.use(`${env.API_PREFIX}/organizations`, organizationRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
