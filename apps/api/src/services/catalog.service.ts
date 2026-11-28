@@ -12,11 +12,14 @@ type ProductInput = { sku: string; name: string; category: string; description?:
 const audit = (actor: Actor, action: string, resourceType: string, resourceId: string, metadata: Record<string, unknown> = {}) => AuditEvent.create({ organizationId: actor.organizationId, actorUserId: actor.userId, action, resourceType, resourceId, metadata });
 function validId(id: string, label: string) { if (!Types.ObjectId.isValid(id)) throw new AppError(`Invalid ${label} identifier`, 400, "INVALID_IDENTIFIER"); }
 function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-function buildFilter(organizationId: string, filters: PageFilters) {
+function buildFilter(organizationId: string, filters: PageFilters, searchFields: string[]) {
  const query: Record<string, unknown> = { organizationId };
  if (filters.status) query.status = filters.status;
  if (filters.category) query.category = filters.category.toLocaleLowerCase("en");
- if (filters.search) { const pattern = new RegExp(escapeRegex(filters.search), "i"); query.$or = [{ name: pattern }, { category: pattern }, { sku: pattern }, { materialCode: pattern }, { brand: pattern }]; }
+ if (filters.search) {
+  const pattern = new RegExp(escapeRegex(filters.search), "i");
+  query.$or = searchFields.map(field => ({ [field]: pattern }));
+ }
  return query;
 }
 async function validateBom(organizationId: string, items: NonNullable<ProductInput["billOfMaterials"]>) {
@@ -28,7 +31,7 @@ async function validateBom(organizationId: string, items: NonNullable<ProductInp
  if (count !== ids.length) throw new AppError("Every bill-of-materials material must be active and belong to this organization", 400, "INVALID_BILL_OF_MATERIALS_MATERIAL");
 }
 export async function listProducts(organizationId: string, filters: PageFilters) {
- const query = buildFilter(organizationId, filters);
+ const query = buildFilter(organizationId, filters, ["name", "category", "sku", "brand"]);
  const [items, total] = await Promise.all([Product.find(query).select("-__v").sort({ updatedAt: -1, _id: -1 }).skip((filters.page - 1) * filters.limit).limit(filters.limit).lean(), Product.countDocuments(query)]);
  return { items, pagination: { page: filters.page, limit: filters.limit, total, pages: Math.ceil(total / filters.limit) } };
 }
@@ -58,7 +61,7 @@ export async function updateProduct(actor: Actor, id: string, input: Partial<Pro
  return product;
 }
 export async function listMaterials(organizationId: string, filters: PageFilters) {
- const query = buildFilter(organizationId, filters);
+ const query = buildFilter(organizationId, filters, ["name", "category", "materialCode"]);
  const [items, total] = await Promise.all([Material.find(query).populate("supplierId", "supplierCode displayName status").select("-__v").sort({ updatedAt: -1, _id: -1 }).skip((filters.page - 1) * filters.limit).limit(filters.limit).lean(), Material.countDocuments(query)]);
  return { items, pagination: { page: filters.page, limit: filters.limit, total, pages: Math.ceil(total / filters.limit) } };
 }
